@@ -1,3 +1,36 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    h = _P(__file__).resolve().parent
+    _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+    _spec = _ilu.spec_from_file_location(n, _cand)
+    _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_m); return _m
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import logging
 import os
 import re
@@ -31,6 +64,15 @@ def normalize_to_env_variable_name(name: str) -> str:
             f"Invalid environment variable name '{env_variable_name}': Cannot start with a digit."
         )
 
+    # LINEAJE: enforce() `env_variable_name` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:7cca50e88e4212ee7155cedb4f72038e396106f56efe60768505a125a3475e60'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:7cca50e88e4212ee7155cedb4f72038e396106f56efe60768505a125a3475e60', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 34, 'function': 'normalize_to_env_variable_name'}})
+    try:
+        env_variable_name = _gr_client.enforce(_gr_site, env_variable_name, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return env_variable_name
 
 
@@ -360,9 +402,29 @@ class LLMEndpointConfig(QuivrBaseConfig):
             self.llm_api_key = os.getenv(self.env_variable_name)
 
         if not self.llm_api_key:
-            logger.warning(f"The API key for supplier '{self.supplier}' is not set. ")
+            _lineaje_payload = f"The API key for supplier '{self.supplier}' is not set. "
+            # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:6b93fde637d531cb05b24ec1a399edcda9d00da44d82d2e8278fff44e82bb838'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:6b93fde637d531cb05b24ec1a399edcda9d00da44d82d2e8278fff44e82bb838', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 363, 'function': 'LLMEndpointConfig.set_api_key'}})
+            try:
+                _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                pass
+            logger.warning(_lineaje_payload)
+            _lineaje_payload = f"Please set the environment variable: '{self.env_variable_name}'. "
+            # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:dac4821596c6b7283cfd8ceeab22034a2a46098f541d50c951e59063a0eed288'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:dac4821596c6b7283cfd8ceeab22034a2a46098f541d50c951e59063a0eed288', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 364, 'function': 'LLMEndpointConfig.set_api_key'}})
+            try:
+                _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                pass
             logger.warning(
-                f"Please set the environment variable: '{self.env_variable_name}'. "
+                _lineaje_payload
             )
 
     def set_llm_model_config(self):
@@ -379,28 +441,68 @@ class LLMEndpointConfig(QuivrBaseConfig):
                     else llm_model_config.max_context_tokens
                 )
                 if self.max_context_tokens > _max_context_tokens:
+                    _lineaje_payload = f"Lowering max_context_tokens from {self.max_context_tokens} to {_max_context_tokens}"
+                    # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:60f55a7e1f438fe199ed50235183cc9366d3f2595a2d173dc0fa19fab116978b'
+                    _gr_client = _lineaje_load_gr_client()
+                    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:60f55a7e1f438fe199ed50235183cc9366d3f2595a2d173dc0fa19fab116978b', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 382, 'function': 'LLMEndpointConfig.set_llm_model_config'}})
+                    try:
+                        _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                    except _gr_client.GuardrailUnavailableError:
+                        pass
+                    except PermissionError:
+                        pass
                     logger.warning(
-                        f"Lowering max_context_tokens from {self.max_context_tokens} to {_max_context_tokens}"
+                        _lineaje_payload
                     )
                     self.max_context_tokens = _max_context_tokens
 
                 if self.max_context_tokens < MIN_CONTEXT_TOKENS:
+                    _lineaje_payload = f"max_context_tokens is too low: {self.max_context_tokens}. "
+                    # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:45309ce207cc7cec013d1c7064228481631edb121378b647b8ed43bfc0f6c29d'
+                    _gr_client = _lineaje_load_gr_client()
+                    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:45309ce207cc7cec013d1c7064228481631edb121378b647b8ed43bfc0f6c29d', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 388, 'function': 'LLMEndpointConfig.set_llm_model_config'}})
+                    try:
+                        _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                    except _gr_client.GuardrailUnavailableError:
+                        pass
+                    except PermissionError:
+                        pass
                     logger.error(
-                        f"max_context_tokens is too low: {self.max_context_tokens}. "
+                        _lineaje_payload
                     )
                     raise ValueError(
                         f"max_context_tokens is too low: {self.max_context_tokens}. "
                     )
             if llm_model_config.max_output_tokens:
                 if self.max_output_tokens > llm_model_config.max_output_tokens:
+                    _lineaje_payload = f"Lowering max_output_tokens from {self.max_output_tokens} to {llm_model_config.max_output_tokens}"
+                    # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:6b7a773539e95ec25376a5d1df985f6cc9d2c1765512cdf7225bc5cf8aa5a8dd'
+                    _gr_client = _lineaje_load_gr_client()
+                    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:6b7a773539e95ec25376a5d1df985f6cc9d2c1765512cdf7225bc5cf8aa5a8dd', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 396, 'function': 'LLMEndpointConfig.set_llm_model_config'}})
+                    try:
+                        _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                    except _gr_client.GuardrailUnavailableError:
+                        pass
+                    except PermissionError:
+                        pass
                     logger.warning(
-                        f"Lowering max_output_tokens from {self.max_output_tokens} to {llm_model_config.max_output_tokens}"
+                        _lineaje_payload
                     )
                     self.max_output_tokens = llm_model_config.max_output_tokens
 
                 if self.max_output_tokens < MIN_OUTPUT_TOKENS:
+                    _lineaje_payload = f"max_output_tokens is too low: {self.max_output_tokens}. "
+                    # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:2985880eb6edf92bf1e4f6b511becbaf9d8c3ff208925fa13b8fe27e0c78b0bc'
+                    _gr_client = _lineaje_load_gr_client()
+                    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:2985880eb6edf92bf1e4f6b511becbaf9d8c3ff208925fa13b8fe27e0c78b0bc', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/entities/config.py', 'line': 402, 'function': 'LLMEndpointConfig.set_llm_model_config'}})
+                    try:
+                        _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                    except _gr_client.GuardrailUnavailableError:
+                        pass
+                    except PermissionError:
+                        pass
                     logger.error(
-                        f"max_output_tokens is too low: {self.max_output_tokens}. "
+                        _lineaje_payload
                     )
                     raise ValueError(
                         f"max_output_tokens is too low: {self.max_output_tokens}. "

@@ -1,3 +1,36 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    h = _P(__file__).resolve().parent
+    _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+    _spec = _ilu.spec_from_file_location(n, _cand)
+    _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_m); return _m
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import os
 import shutil
 from pathlib import Path
@@ -126,6 +159,15 @@ class LocalStorage(StorageBase):
         """
         tstorage = cls(dir_path=config.storage_path)
         tstorage.files = [QuivrFile.deserialize(f) for f in config.files.values()]
+        # LINEAJE: enforce() `tstorage` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:9feec214a83e20c2cc7c8bc3a8bdc55796bbe3d322c86d0837e9780e3e849861'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:9feec214a83e20c2cc7c8bc3a8bdc55796bbe3d322c86d0837e9780e3e849861', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/storage/local_storage.py', 'line': 129, 'function': 'LocalStorage.load'}})
+        try:
+            tstorage = _gr_client.enforce(_gr_site, tstorage, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return tstorage
 
 
@@ -155,4 +197,13 @@ class TransparentStorage(StorageBase):
         tstorage.id_files = {
             i: QuivrFile.deserialize(f) for i, f in config.files.items()
         }
+        # LINEAJE: enforce() `tstorage` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a4b499e1744aaf1497ca0f6c879e8af02c1b4889c23b2e8e0aa9e6b2cd39ddc3'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a4b499e1744aaf1497ca0f6c879e8af02c1b4889c23b2e8e0aa9e6b2cd39ddc3', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/storage/local_storage.py', 'line': 158, 'function': 'TransparentStorage.load'}})
+        try:
+            tstorage = _gr_client.enforce(_gr_site, tstorage, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return tstorage

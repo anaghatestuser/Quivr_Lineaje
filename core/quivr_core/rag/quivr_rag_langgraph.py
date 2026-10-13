@@ -1,3 +1,36 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    h = _P(__file__).resolve().parent
+    _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+    _spec = _ilu.spec_from_file_location(n, _cand)
+    _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_m); return _m
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import asyncio
 import datetime
 import logging
@@ -250,6 +283,15 @@ class IdempotentCompressor(BaseDocumentCompressor):
         This is a placeholder until a more sophisticated document compression
         algorithm is implemented.
         """
+        # LINEAJE: enforce() `documents` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:58dba1272b49cd57d0b75c28159382429c9783c3c5f11e9400f0832aced37ebd'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:58dba1272b49cd57d0b75c28159382429c9783c3c5f11e9400f0832aced37ebd', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 253, 'function': 'IdempotentCompressor.compress_documents'}})
+        try:
+            documents = _gr_client.enforce(_gr_site, documents, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return documents
 
 
@@ -334,12 +376,34 @@ class QuivrQARAGLangGraph:
             structured_llm = self.llm_endpoint._llm.with_structured_output(
                 SplittedInput, method="json_schema"
             )
+            # LINEAJE: enforce() `msg` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:0d4a8228f9b53d8c3d8bea4f7b07979d3311ebca3acf97b7ab801f8508502c0b'
+            _lineaje_msg_evidence = {'msg': msg, 'model': _lineaje_current_model()}
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:0d4a8228f9b53d8c3d8bea4f7b07979d3311ebca3acf97b7ab801f8508502c0b', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 337, 'function': 'QuivrQARAGLangGraph.routing'}})
+            try:
+                _lineaje_msg_evidence = _gr_client.enforce(_gr_site, _lineaje_msg_evidence, content_type='application/json')
+                msg = _lineaje_msg_evidence.get('msg', msg) if isinstance(_lineaje_msg_evidence, dict) else msg
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                raise
             response = structured_llm.invoke(msg)
 
         except openai.BadRequestError:
             structured_llm = self.llm_endpoint._llm.with_structured_output(
                 SplittedInput
             )
+            # LINEAJE: enforce() `msg` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:11b68616426fe15f3c5d108c5f6c4b56918f5ce28a3d80d3a245e9280af83dc3'
+            _lineaje_msg_evidence = {'msg': msg, 'model': _lineaje_current_model()}
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:11b68616426fe15f3c5d108c5f6c4b56918f5ce28a3d80d3a245e9280af83dc3', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 343, 'function': 'QuivrQARAGLangGraph.routing'}})
+            try:
+                _lineaje_msg_evidence = _gr_client.enforce(_gr_site, _lineaje_msg_evidence, content_type='application/json')
+                msg = _lineaje_msg_evidence.get('msg', msg) if isinstance(_lineaje_msg_evidence, dict) else msg
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                raise
             response = structured_llm.invoke(msg)
 
         send_list: List[Send] = []
@@ -364,6 +428,15 @@ class QuivrQARAGLangGraph:
                 )
             )
 
+        # LINEAJE: enforce() `send_list` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:71d0ae9e91d666610108a3ecd5527edc1eed884294ff4dc07c2b5ab6d05ea8bc'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:71d0ae9e91d666610108a3ecd5527edc1eed884294ff4dc07c2b5ab6d05ea8bc', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 367, 'function': 'QuivrQARAGLangGraph.routing'}})
+        try:
+            send_list = _gr_client.enforce(_gr_site, send_list, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return send_list
 
     def routing_split(self, state: AgentState):
@@ -515,6 +588,13 @@ class QuivrQARAGLangGraph:
         # Replace each question with its condensed version
         for response, task_id in zip(responses, task_ids, strict=False):
             tasks.set_definition(task_id, response.content)
+            # LINEAJE: enforce() `response` at llm->agent post_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:82c69e77e7909612460ca546a1af1d025c1ed98f1e3b89279b6e7b674b666d31'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:82c69e77e7909612460ca546a1af1d025c1ed98f1e3b89279b6e7b674b666d31', phase='post_model', boundary={'source': 'model', 'sink': 'agent_message'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='llm', destination_type='agent', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 517, 'function': 'QuivrQARAGLangGraph.rewrite'}})
+            try:
+                response = _gr_client.enforce(_gr_site, response, content_type='application/json', variable_name='response', source_file=__file__, before_line=517)
+            except _gr_client.GuardrailUnavailableError:
+                pass
 
         return {**state, "tasks": tasks}
 
@@ -525,13 +605,32 @@ class QuivrQARAGLangGraph:
         )
 
         if relevance_score_threshold is None:
+            # LINEAJE: enforce() `chunks` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:47b73da74fb8498a8cbc754a31025541f24e12a71ccd3511ab213b9d5363e151'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:47b73da74fb8498a8cbc754a31025541f24e12a71ccd3511ab213b9d5363e151', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 528, 'function': 'QuivrQARAGLangGraph.filter_chunks_by_relevance'}})
+            try:
+                chunks = _gr_client.enforce(_gr_site, chunks, content_type='text/plain')
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                pass
             return chunks
 
         filtered_chunks = []
         for chunk in chunks:
             if config.relevance_score_key not in chunk.metadata:
+                _lineaje_payload = f"Relevance score key {config.relevance_score_key} not found in metadata, cannot filter chunks by relevance"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:0300eea5637c93444dc88251be43b5e77c5afbfacb58b438e0df0fea07d891c4'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:0300eea5637c93444dc88251be43b5e77c5afbfacb58b438e0df0fea07d891c4', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 533, 'function': 'QuivrQARAGLangGraph.filter_chunks_by_relevance'}})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logger.warning(
-                    f"Relevance score key {config.relevance_score_key} not found in metadata, cannot filter chunks by relevance"
+                    _lineaje_payload
                 )
                 filtered_chunks.append(chunk)
             elif (
@@ -539,6 +638,15 @@ class QuivrQARAGLangGraph:
             ):
                 filtered_chunks.append(chunk)
 
+        # LINEAJE: enforce() `filtered_chunks` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:56f6bc28f9acb5b97e2dd6dd97769ba3b42afc8a1c9e1e7fcde6bc640d47f276'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:56f6bc28f9acb5b97e2dd6dd97769ba3b42afc8a1c9e1e7fcde6bc640d47f276', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 542, 'function': 'QuivrQARAGLangGraph.filter_chunks_by_relevance'}})
+        try:
+            filtered_chunks = _gr_client.enforce(_gr_site, filtered_chunks, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return filtered_chunks
 
     async def tool_routing(self, state: AgentState):
@@ -583,6 +691,15 @@ class QuivrQARAGLangGraph:
         else:
             send_list.append(Send("generate_rag", payload))
 
+        # LINEAJE: enforce() `send_list` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:36d08a9b6f61f005406ce8e2fccf6df6e10930cbcc6e3a57b62faf4699df7343'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:36d08a9b6f61f005406ce8e2fccf6df6e10930cbcc6e3a57b62faf4699df7343', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 586, 'function': 'QuivrQARAGLangGraph.tool_routing'}})
+        try:
+            send_list = _gr_client.enforce(_gr_site, send_list, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return send_list
 
     async def run_tool(self, state: AgentState) -> AgentState:
@@ -711,8 +828,18 @@ class QuivrQARAGLangGraph:
             base_retriever = self.get_retriever(**kwargs)
 
             if i > 1:
+                _lineaje_payload = f"Increasing top_n to {top_n} and k to {k} to retrieve more relevant chunks"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:b4f3afcade4c9d6ecef363ed1d5f34c369e2e228f00dfe77dc60c3030e309e8d'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:b4f3afcade4c9d6ecef363ed1d5f34c369e2e228f00dfe77dc60c3030e309e8d', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 714, 'function': 'QuivrQARAGLangGraph.dynamic_retrieve'}})
+                try:
+                    _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logging.info(
-                    f"Increasing top_n to {top_n} and k to {k} to retrieve more relevant chunks"
+                    _lineaje_payload
                 )
 
             compression_retriever = ContextualCompressionRetriever(
@@ -747,9 +874,19 @@ class QuivrQARAGLangGraph:
 
             context_length = self.get_rag_context_length(state, docs)
             if context_length >= self.retrieval_config.llm_config.max_context_tokens:
+                _lineaje_payload = (f"The context length is {context_length} which is greater than "
+                    f"the max context tokens of {self.retrieval_config.llm_config.max_context_tokens}")
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a1d0e957d35878b96c99a8dfe42ba84ca10cc74e84afaa6b30d8fff1a298ca58'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a1d0e957d35878b96c99a8dfe42ba84ca10cc74e84afaa6b30d8fff1a298ca58', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 750, 'function': 'QuivrQARAGLangGraph.dynamic_retrieve'}})
+                try:
+                    _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logging.warning(
-                    f"The context length is {context_length} which is greater than "
-                    f"the max context tokens of {self.retrieval_config.llm_config.max_context_tokens}"
+                    _lineaje_payload
                 )
                 break
 
@@ -812,7 +949,17 @@ class QuivrQARAGLangGraph:
             )[:top_n]
         )
 
-        logger.info(f"Top knowledge IDs: {top_knowledge_ids}")
+        _lineaje_payload = f"Top knowledge IDs: {top_knowledge_ids}"
+        # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:68da78994b82bd5ee5f3d86b3f93cbf138199c430182672f66293e2344af5b43'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:68da78994b82bd5ee5f3d86b3f93cbf138199c430182672f66293e2344af5b43', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 815, 'function': 'QuivrQARAGLangGraph.retrieve_full_documents_context'}})
+        try:
+            _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
+        logger.info(_lineaje_payload)
 
         _docs = []
 
@@ -892,9 +1039,19 @@ class QuivrQARAGLangGraph:
                     task_token_counts[longest_task_id]["total"] -= removed_tokens
                     tasks.set_docs(longest_task_id, tasks(longest_task_id).docs[:-1])
             else:
+                _lineaje_payload = (f"Not enough context to reduce. The context length is {n} "
+                    f"which is greater than the max context tokens of {max_context_tokens}")
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:7d61ffcea9ce191a08dca54a978266822907119a04e548fcf8300d8b34ef1c75'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:7d61ffcea9ce191a08dca54a978266822907119a04e548fcf8300d8b34ef1c75', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 895, 'function': 'QuivrQARAGLangGraph.reduce_rag_context'}})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logging.warning(
-                    f"Not enough context to reduce. The context length is {n} "
-                    f"which is greater than the max context tokens of {max_context_tokens}"
+                    _lineaje_payload
                 )
                 break
 
@@ -906,8 +1063,18 @@ class QuivrQARAGLangGraph:
 
             iteration += 1
             if iteration > MAX_ITERATIONS:
+                _lineaje_payload = f"Attained the maximum number of iterations ({MAX_ITERATIONS})"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:1a46d1f0d2283a98e1cd37f551d3a7345cb63645221449eead8d974ecb5c1310'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:1a46d1f0d2283a98e1cd37f551d3a7345cb63645221449eead8d974ecb5c1310', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 909, 'function': 'QuivrQARAGLangGraph.reduce_rag_context'}})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logging.warning(
-                    f"Attained the maximum number of iterations ({MAX_ITERATIONS})"
+                    _lineaje_payload
                 )
                 break
 
@@ -949,6 +1116,17 @@ class QuivrQARAGLangGraph:
         msg = prompt_template.format_prompt(**inputs)
         llm = self.bind_tools_to_llm(self.generate_zendesk_rag.__name__)
 
+        # LINEAJE: enforce() `msg` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:27eb55300402f0bc08d9ab42158f1afe7379393f1d76fa161aaefc96220264b2'
+        _lineaje_msg_evidence = {'msg': msg, 'model': _lineaje_current_model()}
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:27eb55300402f0bc08d9ab42158f1afe7379393f1d76fa161aaefc96220264b2', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 952, 'function': 'QuivrQARAGLangGraph.generate_zendesk_rag'}})
+        try:
+            _lineaje_msg_evidence = _gr_client.enforce(_gr_site, _lineaje_msg_evidence, content_type='application/json')
+            msg = _lineaje_msg_evidence.get('msg', msg) if isinstance(_lineaje_msg_evidence, dict) else msg
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            raise
         response = llm.invoke(msg)
 
         return {**state, "messages": [response]}
@@ -961,6 +1139,17 @@ class QuivrQARAGLangGraph:
         state, inputs = self.reduce_rag_context(state, inputs, prompt)
         msg = prompt.format(**inputs)
         llm = self.bind_tools_to_llm(self.generate_rag.__name__)
+        # LINEAJE: enforce() `msg` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:6f310daf8d1fc35fa942643f396e0dd6ffdb12987f30437d40733f8b764b3046'
+        _lineaje_msg_evidence = {'msg': msg, 'model': _lineaje_current_model()}
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:6f310daf8d1fc35fa942643f396e0dd6ffdb12987f30437d40733f8b764b3046', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 964, 'function': 'QuivrQARAGLangGraph.generate_rag'}})
+        try:
+            _lineaje_msg_evidence = _gr_client.enforce(_gr_site, _lineaje_msg_evidence, content_type='application/json')
+            msg = _lineaje_msg_evidence.get('msg', msg) if isinstance(_lineaje_msg_evidence, dict) else msg
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            raise
         response = llm.invoke(msg)
 
         return {**state, "messages": [response]}
@@ -1014,9 +1203,32 @@ class QuivrQARAGLangGraph:
             ]
         )
         # Run
+        _lineaje_payload = {"chat_history": final_inputs["chat_history"]}
+        # LINEAJE: enforce() `_lineaje_payload` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:aba415e6d06f0a76401670fcb9060bae7d4debea3d7618a59e4296b2fcf4d495'
+        _lineaje__lineaje_payload_evidence = {'_lineaje_payload': _lineaje_payload, 'model': _lineaje_current_model()}
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:aba415e6d06f0a76401670fcb9060bae7d4debea3d7618a59e4296b2fcf4d495', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 1017, 'function': 'QuivrQARAGLangGraph.generate_chat_llm'}})
+        try:
+            _lineaje__lineaje_payload_evidence = _gr_client.enforce(_gr_site, _lineaje__lineaje_payload_evidence, content_type='application/json')
+            _lineaje_payload = _lineaje__lineaje_payload_evidence.get('_lineaje_payload', _lineaje_payload) if isinstance(_lineaje__lineaje_payload_evidence, dict) else _lineaje_payload
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            raise
         chat_llm_prompt = CHAT_LLM_PROMPT.invoke(
-            {"chat_history": final_inputs["chat_history"]}
+            _lineaje_payload
         )
+        # LINEAJE: enforce() `chat_llm_prompt` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:2791dfe3c21a8dab118acea2ac667242c7296ca8cce0ab01c8e6d7288d46620b'
+        _lineaje_chat_llm_prompt_evidence = {'chat_llm_prompt': chat_llm_prompt, 'model': _lineaje_current_model()}
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:2791dfe3c21a8dab118acea2ac667242c7296ca8cce0ab01c8e6d7288d46620b', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 1020, 'function': 'QuivrQARAGLangGraph.generate_chat_llm'}})
+        try:
+            _lineaje_chat_llm_prompt_evidence = _gr_client.enforce(_gr_site, _lineaje_chat_llm_prompt_evidence, content_type='application/json')
+            chat_llm_prompt = _lineaje_chat_llm_prompt_evidence.get('chat_llm_prompt', chat_llm_prompt) if isinstance(_lineaje_chat_llm_prompt_evidence, dict) else chat_llm_prompt
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            raise
         response = llm.invoke(chat_llm_prompt)
         return {**state, "messages": [response]}
 
@@ -1191,9 +1403,27 @@ class QuivrQARAGLangGraph:
             structured_llm = self.llm_endpoint._llm.with_structured_output(
                 output_class, method="json_schema"
             )
+            # LINEAJE: enforce() `prompt` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:94e66e40112a220834f5532fb9c6167ca6478126d0adbf5379657658b404b6be'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:94e66e40112a220834f5532fb9c6167ca6478126d0adbf5379657658b404b6be', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 1194, 'function': 'QuivrQARAGLangGraph.invoke_structured_output'}})
+            try:
+                prompt = _gr_client.enforce(_gr_site, prompt, content_type='application/json', variable_name='prompt', source_file=__file__, before_line=1194)
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                raise
             return structured_llm.invoke(prompt)
         except openai.BadRequestError:
             structured_llm = self.llm_endpoint._llm.with_structured_output(output_class)
+            # LINEAJE: enforce() `prompt` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:f4f0fd943ff72da53ae37cb37e098b5ac7e668fd61298066edfb51599b5962f6'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:f4f0fd943ff72da53ae37cb37e098b5ac7e668fd61298066edfb51599b5962f6', phase='pre_model', boundary={'source': 'agent_message', 'sink': 'model'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='llm', project='', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 21, 'name': 'CohereRerank'}, 'destination': {'entity_type': 'llm', 'name': 'openai', 'version': '', 'provider': ''}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'CohereRerank', 'version': '1.0.0', 'purl': 'pkg:aiagent/CohereRerank@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}, 'destination': {'entity_type': 'aimodel', 'name': 'openai', 'version': '', 'purl': 'pkg:aimodel/openai@1.0.0'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag_langgraph.py', 'line': 1197, 'function': 'QuivrQARAGLangGraph.invoke_structured_output'}})
+            try:
+                prompt = _gr_client.enforce(_gr_site, prompt, content_type='application/json', variable_name='prompt', source_file=__file__, before_line=1197)
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            except PermissionError:
+                raise
             return structured_llm.invoke(prompt)
 
     def _build_rag_prompt_inputs(

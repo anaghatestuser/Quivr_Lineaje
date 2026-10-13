@@ -1,3 +1,36 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    h = _P(__file__).resolve().parent
+    _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+    _spec = _ilu.spec_from_file_location(n, _cand)
+    _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_m); return _m
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import asyncio
 import logging
 import os
@@ -66,12 +99,32 @@ async def process_files(
         try:
             if file.file_extension:
                 processor_cls = get_processor_class(file.file_extension)
-                logger.debug(f"processing {file} using class {processor_cls.__name__}")
+                _lineaje_payload = f"processing {file} using class {processor_cls.__name__}"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:f2691307f34833bb0a19cc007a6ae256946125c32bbecde051672c42abd5483f'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:f2691307f34833bb0a19cc007a6ae256946125c32bbecde051672c42abd5483f', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 69, 'function': 'process_files'}})
+                try:
+                    _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
+                logger.debug(_lineaje_payload)
                 processor = processor_cls(**processor_kwargs)
                 docs = await processor.process_file(file)
                 knowledge.extend(docs)
             else:
-                logger.error(f"can't find processor for {file}")
+                _lineaje_payload = f"can't find processor for {file}"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:29d7a3e92f2def825dfd36011afa5f09d9b2c0a5cec8e364ded2bd062b644ac8'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:29d7a3e92f2def825dfd36011afa5f09d9b2c0a5cec8e364ded2bd062b644ac8', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 74, 'function': 'process_files'}})
+                try:
+                    _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
+                logger.error(_lineaje_payload)
                 if skip_file_error:
                     continue
                 else:
@@ -82,6 +135,15 @@ async def process_files(
             else:
                 raise Exception(f"Can't parse {file}. No available processor") from e
 
+    # LINEAJE: enforce() `knowledge` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:f1f7dc277ae27ca95a324dd6853d1b8b4448161abf5fa588f627119f2235244e'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:f1f7dc277ae27ca95a324dd6853d1b8b4448161abf5fa588f627119f2235244e', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 85, 'function': 'process_files'}})
+    try:
+        knowledge = _gr_client.enforce(_gr_site, knowledge, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return knowledge
 
 
@@ -142,6 +204,15 @@ class Brain:
         console = Console()
         tree = self.info().to_tree()
         panel = Panel(tree, title="Brain Info", expand=False, border_style="bold")
+        # LINEAJE: enforce() `panel` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:845dd4959d03f2dce6585f53bef1241c8924547cacb9d53a311946e2b662a2c3'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:845dd4959d03f2dce6585f53bef1241c8924547cacb9d53a311946e2b662a2c3', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 145, 'function': 'Brain.print_info'}})
+        try:
+            panel = _gr_client.enforce(_gr_site, panel, content_type='application/json')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         console.print(panel)
 
     @classmethod
@@ -268,7 +339,24 @@ class Brain:
         )
 
         with open(os.path.join(brain_path, "config.json"), "w") as f:
-            f.write(bserialized.model_dump_json())
+            _lineaje_payload = bserialized.model_dump_json()
+            # LINEAJE: enforce() `_lineaje_payload` at agent->file file_write — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:87683b6b1a4f0a293731b39b2ae0867b1f05c57cda01349be83c9eb41189b5a8'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:87683b6b1a4f0a293731b39b2ae0867b1f05c57cda01349be83c9eb41189b5a8', phase='file_write', boundary={'source': 'agent_message', 'sink': 'file_content'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='file', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 271, 'function': 'Brain.save'}})
+            try:
+                _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json', variable_name='_lineaje_payload', source_file=__file__, before_line=271))
+            except _gr_client.GuardrailUnavailableError:
+                pass
+            f.write(_lineaje_payload)
+        # LINEAJE: enforce() `brain_path` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:9164ca246d5e66e207c4f47febb7a28670e505a1420b76f4d13cd69eb5e5c882'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:9164ca246d5e66e207c4f47febb7a28670e505a1420b76f4d13cd69eb5e5c882', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='user_interface', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 272, 'function': 'Brain.save'}})
+        try:
+            brain_path = _gr_client.enforce(_gr_site, brain_path, content_type='text/plain')
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
         return brain_path
 
     def info(self) -> BrainInfo:
@@ -345,7 +433,17 @@ class Brain:
             file = await load_qfile(brain_id, path)
             await storage.upload_file(file)
 
-        logger.debug(f"uploaded all files to {storage}")
+        _lineaje_payload = f"uploaded all files to {storage}"
+        # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:9e8c4ba7bfa74eb2a9279c72bd250bc8f92b86675b4f77898639b31fd41553b6'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:9e8c4ba7bfa74eb2a9279c72bd250bc8f92b86675b4f77898639b31fd41553b6', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 348, 'function': 'Brain.afrom_files'}})
+        try:
+            _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
+        logger.debug(_lineaje_payload)
 
         # Parse files
         docs = await process_files(
@@ -358,9 +456,26 @@ class Brain:
         if vector_db is None:
             vector_db = await build_default_vectordb(docs, embedder)
         else:
+            # LINEAJE: enforce() `docs` at agent->external pre_tool — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:c347c4d0b54401dcea07e39c22ee26350edcb1cd17d20b5810fc494a18bef3e4'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:c347c4d0b54401dcea07e39c22ee26350edcb1cd17d20b5810fc494a18bef3e4', phase='pre_tool', boundary={'source': 'rag_pipeline', 'sink': 'vector_store'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='external', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 361, 'function': 'Brain.afrom_files'}})
+            try:
+                docs = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, docs, content_type='application/json', variable_name='docs', source_file=__file__, before_line=361))
+            except _gr_client.GuardrailUnavailableError:
+                pass
             await vector_db.aadd_documents(docs)
 
-        logger.debug(f"added {len(docs)} chunks to vectordb")
+        _lineaje_payload = f"added {len(docs)} chunks to vectordb"
+        # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:9ec5307255e0f9ad9284be09a004d251b1bd9de36a21d89589b2dbdee4b82a66'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:9ec5307255e0f9ad9284be09a004d251b1bd9de36a21d89589b2dbdee4b82a66', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='log', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 363, 'function': 'Brain.afrom_files'}})
+        try:
+            _lineaje_payload = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json'))
+        except _gr_client.GuardrailUnavailableError:
+            pass
+        except PermissionError:
+            pass
+        logger.debug(_lineaje_payload)
 
         return cls(
             id=brain_id,
@@ -441,6 +556,13 @@ class Brain:
         if vector_db is None:
             vector_db = await build_default_vectordb(langchain_documents, embedder)
         else:
+            # LINEAJE: enforce() `langchain_documents` at agent->external pre_tool — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:7a7bf7778338d99d7a547dc5bc5e9dde5c34db2ade774c8a7140a17f12455d7d'
+            _gr_client = _lineaje_load_gr_client()
+            _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:7a7bf7778338d99d7a547dc5bc5e9dde5c34db2ade774c8a7140a17f12455d7d', phase='pre_tool', boundary={'source': 'rag_pipeline', 'sink': 'vector_store'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='external', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 444, 'function': 'Brain.afrom_langchain_documents'}})
+            try:
+                langchain_documents = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, langchain_documents, content_type='application/json', variable_name='langchain_documents', source_file=__file__, before_line=444))
+            except _gr_client.GuardrailUnavailableError:
+                pass
             await vector_db.aadd_documents(langchain_documents)
 
         return cls(
@@ -482,6 +604,13 @@ class Brain:
         result = await self.vector_db.asimilarity_search_with_score(
             query, k=n_results, filter=filter, fetch_k=fetch_n_neighbors
         )
+        # LINEAJE: enforce() `result` at agent->external post_tool — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:ae1aad6c610e718a7c20228ab14682be985a534ec571c9b4650fda8030408618'
+        _gr_client = _lineaje_load_gr_client()
+        _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:ae1aad6c610e718a7c20228ab14682be985a534ec571c9b4650fda8030408618', phase='post_tool', boundary={'source': 'vector_store', 'sink': 'agent_context'}, candidate_policies=[], fail_mode='ALLOW_WITH_AUDIT', source_type='agent', destination_type='external', project='lineaje-openclaw', organization='Root Organization', project_name='quivr', project_version='main', project_branch='main', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_Zaf1x0VOTwdhYyf8', 'repository_uri': 'https://github.com/lineaje-demo/quivr', 'file_path': 'core/quivr_core/brain/brain.py', 'line': 13, 'name': 'OpenAIEmbeddings'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'OpenAIEmbeddings', 'version': '1.0.0', 'purl': 'pkg:aiagent/OpenAIEmbeddings@1.0.0'}, 'app': {'name': 'quivr', 'version': 'main', 'purl': 'pkg:github/lineaje-demo/quivr@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/brain/brain.py', 'line': 482, 'function': 'Brain.asearch'}})
+        try:
+            result = await __import__('asyncio').to_thread(lambda: _gr_client.enforce(_gr_site, result, content_type='application/json', variable_name='result', source_file=__file__, before_line=482))
+        except _gr_client.GuardrailUnavailableError:
+            pass
 
         return [SearchResult(chunk=d, distance=s) for d, s in result]
 

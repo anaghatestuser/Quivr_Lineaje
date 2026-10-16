@@ -1,0 +1,11 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Mask PII in Logs",
+      "policy_id": "AI_DAT_SEC_010",
+      "policy_name": "Do not log PII.",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:3fa4ef616f866b4c1f53bd12dca7eb25ff21a4f79d484bdd15fb8429e32d7525"
+}

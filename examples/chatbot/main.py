@@ -36,6 +36,7 @@ def _lineaje_current_model():
     return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
 
 import tempfile
+from uuid import uuid4
 
 import chainlit as cl
 from quivr_core import Brain
@@ -147,7 +148,11 @@ async def main(message: cl.Message):
     elements = []
 
     # Use the ask_stream method for streaming responses
-    async for chunk in brain.ask_streaming(message.content, retrieval_config=retrieval_config):
+    async for chunk in brain.ask_streaming(
+        message.content,
+        run_id=uuid4(),
+        retrieval_config=retrieval_config,
+    ):
         try:
             _lineaje_obs = _lineaje_load_gr_client()
             _lineaje_obs_site = _lineaje_obs.SiteDescriptor(site_id='site:sha256:c32bc1363a333a96a07782abc5f5e99536ba5055d0b3bc69242aa0abd17b5d2a', phase='', boundary={}, candidate_policies=['AI_AGENT_ACTIVITY_LOG'], fail_mode='ALLOW', source_type='agent', destination_type='user_interface', project='', organization='', components={'file': 'examples/chatbot/main.py', 'line': 68, 'function': 'main', 'agent_name': 'main', 'agent_name_source': 'inferred_from_function', 'call_target': 'msg.stream_token'}, observe_only=True)

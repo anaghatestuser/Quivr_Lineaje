@@ -235,6 +235,13 @@ if __name__ == "__main__":
                 if type(_gr_exc).__name__ == "GRBlockedError": raise
                 _lineaje_payload_231 = _lineaje_payload_231
                 __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+            _lineaje_payload_238 = Panel("Goodbye!", style="bold yellow")
+            try:
+                _lineaje_payload_238 = gr_check(_lineaje_payload_238, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:d805e4239bf37bdd4ba627240e6458c2004745e602b8044b8cb755acc1932af8', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_uucWXDTUdAY6ryDB', 'repository_uri': 'https://github.com/anaghatestuser/quivr_lineaje', 'file_path': 'examples/simple_question_megaparse.py', 'line': 185, 'name': 'ChatOpenAI'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'ChatOpenAI', 'version': '1.0.0', 'purl': 'pkg:aiagent/ChatOpenAI@1.0.0'}, 'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=fbecb3dd8756db019fc5d1b906964893812b2721&commit-time=2026-10-16%2002%3A57%3A22%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'examples/simple_question_megaparse.py', 'line': 238, 'function': ''}, 'file': 'examples/simple_question_megaparse.py', 'line': 238, 'call_target': 'console.print'})
+            except Exception as _gr_exc:
+                if type(_gr_exc).__name__ == "GRBlockedError": raise
+                _lineaje_payload_238 = _lineaje_payload_238
+                __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
             console.print(Panel("Goodbye!", style="bold yellow"))
             break
 
@@ -261,6 +268,13 @@ if __name__ == "__main__":
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload_250 = _lineaje_payload_250
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+        _lineaje_payload_264 = f"[bold green]Quivr Assistant[/bold green]: {answer.answer}"
+        try:
+            _lineaje_payload_264 = gr_check(_lineaje_payload_264, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:d805e4239bf37bdd4ba627240e6458c2004745e602b8044b8cb755acc1932af8', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_uucWXDTUdAY6ryDB', 'repository_uri': 'https://github.com/anaghatestuser/quivr_lineaje', 'file_path': 'examples/simple_question_megaparse.py', 'line': 185, 'name': 'ChatOpenAI'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'ChatOpenAI', 'version': '1.0.0', 'purl': 'pkg:aiagent/ChatOpenAI@1.0.0'}, 'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=fbecb3dd8756db019fc5d1b906964893812b2721&commit-time=2026-10-16%2002%3A57%3A22%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'examples/simple_question_megaparse.py', 'line': 264, 'function': ''}, 'file': 'examples/simple_question_megaparse.py', 'line': 264, 'call_target': 'console.print'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_264 = _lineaje_payload_264
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
         console.print(f"[bold green]Quivr Assistant[/bold green]: {answer.answer}")
 
         _lineaje_payload = "-" * console.width
@@ -283,6 +297,13 @@ if __name__ == "__main__":
         except Exception as _gr_exc:
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload_266 = _lineaje_payload_266
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+        _lineaje_payload_287 = "-" * console.width
+        try:
+            _lineaje_payload_287 = gr_check(_lineaje_payload_287, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:d805e4239bf37bdd4ba627240e6458c2004745e602b8044b8cb755acc1932af8', components={'source': {'entity_type': 'agent', 'unique_org_id': 'vdna_uucWXDTUdAY6ryDB', 'repository_uri': 'https://github.com/anaghatestuser/quivr_lineaje', 'file_path': 'examples/simple_question_megaparse.py', 'line': 185, 'name': 'ChatOpenAI'}, 'identity': {'source': {'entity_type': 'aiagent', 'name': 'ChatOpenAI', 'version': '1.0.0', 'purl': 'pkg:aiagent/ChatOpenAI@1.0.0'}, 'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=fbecb3dd8756db019fc5d1b906964893812b2721&commit-time=2026-10-16%2002%3A57%3A22%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'examples/simple_question_megaparse.py', 'line': 287, 'function': ''}, 'file': 'examples/simple_question_megaparse.py', 'line': 287, 'call_target': 'console.print'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_287 = _lineaje_payload_287
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
         console.print("-" * console.width)
 

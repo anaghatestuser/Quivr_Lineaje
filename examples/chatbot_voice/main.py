@@ -117,6 +117,13 @@ async def on_chat_start():
 @cl.on_message
 async def main(message: cl.Message):
 
+    # LINEAJE: enforce() `message` at user_interface->agent post_agent_receive — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:2ee5f0eea1010041ec0225031139dc2b951acfd734a4e6a1f42756155e3d76d8'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:2ee5f0eea1010041ec0225031139dc2b951acfd734a4e6a1f42756155e3d76d8', phase='post_agent_receive', boundary={'source': 'user_interface', 'sink': 'agent_message'}, fail_mode='BLOCK', source_type='user_interface', destination_type='agent', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=72016c86a21965b36c9672c518149b6f6b082917&commit-time=2026-10-16%2005%3A06%3A01%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'Whisper', 'purl': 'pkg:aimodel/Whisper@1', 'version': '1'}}, 'invocation': {'file': 'examples/chatbot_voice/main.py', 'function': 'main', 'line': 118}, 'destination': {'entity_type': 'llm', 'name': 'whisper-1', 'provider': 'openai', 'version': ''}, 'file': 'examples/chatbot_voice/main.py', 'line': 120, 'function': 'main', 'agent_name': 'main', 'agent_name_source': 'inferred_from_function', 'boundary_id': 'bnd:69affd8d16c027f8'})
+    try:
+        message = _gr_client.enforce(_gr_site, message, content_type='application/json', variable_name='message', source_file=__file__, before_line=120)
+    except _gr_client.GuardrailUnavailableError:
+        pass
     try:
         _lineaje_obs = _lineaje_load_gr_client()
         _lineaje_obs_site = _lineaje_obs.SiteDescriptor(site_id='site:sha256:cddc7efd43b077742283fb6dcc6f3777630bb8866394ddb459ddd1d6bf5f2be3', phase='', boundary={}, candidate_policies=['AI_AGENT_ACTIVITY_LOG'], fail_mode='ALLOW', source_type='user_interface', destination_type='agent', project='', organization='', components={'file': 'examples/chatbot_voice/main.py', 'line': 55, 'function': 'main', 'agent_name': 'main', 'agent_name_source': 'inferred_from_function', 'call_target': 'cl.TaskList'}, observe_only=True)

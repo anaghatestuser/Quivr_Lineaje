@@ -1,0 +1,23 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Sanitize Prompt Injection",
+      "policy_id": "AI_APP_SEC_070",
+      "policy_name": "Detect and block all forms of prompt injection attacks in user inputs and file contents",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Redact PII from uploaded files",
+      "policy_id": "AI_DAT_SEC_023",
+      "policy_name": "Redact PII from uploaded files.",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Redact PII (Singapore) from contents ofuploaded files",
+      "policy_id": "AI_DAT_SEC_024",
+      "policy_name": "Uploaded files must not contain PII (Singapore).",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:1f253705eef340fab908bb337534b3fb3b800686762f5ec2e1e2644a8d7e752c"
+}

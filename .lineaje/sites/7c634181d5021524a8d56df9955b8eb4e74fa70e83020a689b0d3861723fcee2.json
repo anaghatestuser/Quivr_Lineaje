@@ -1,0 +1,41 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Log agent to LLM activity",
+      "policy_id": "AI_AGENT_ACTIVITY_LOG",
+      "policy_name": "AI agent activity logging",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Enforce Approved LLM.",
+      "policy_id": "AI_APP_SEC_006",
+      "policy_name": "Use only LLMs from the organization's approved list.",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Enforce Approved LLM",
+      "policy_id": "AI_APP_SEC_028",
+      "policy_name": "Do not use LLMs from the organization's disallowed list",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Sanitize Prompt Injection",
+      "policy_id": "AI_APP_SEC_070",
+      "policy_name": "Detect and block all forms of prompt injection attacks in user inputs and file contents",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Redact PII",
+      "policy_id": "AI_DAT_SEC_011",
+      "policy_name": "Do not send PII and/or secrets to AI Models",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Emit immutable, forensic-ready audit records for all AI decisions.",
+      "policy_id": "AI_DAT_SEC_029",
+      "policy_name": "Enforce decision logging, audit trail, and forensic readiness for AI-driven actions.",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:7c634181d5021524a8d56df9955b8eb4e74fa70e83020a689b0d3861723fcee2"
+}

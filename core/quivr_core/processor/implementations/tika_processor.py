@@ -258,6 +258,14 @@ class TikaProcessor(ProcessorBase):
                     if type(_gr_exc).__name__ == "GRBlockedError": raise
                     _lineaje_payload = _lineaje_payload
                     __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+                _lineaje_payload_261 = f"tika url error :{e}. retrying for the {retry} time..."
+                try:
+                    import asyncio as _gr_asyncio
+                    _lineaje_payload_261 = await _gr_asyncio.to_thread(gr_check, _lineaje_payload_261, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:5deb0115b16b67ee39c9e7b5cdf09a22b7dce9e06d9e35f94cdd625df1dd754a', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=7fc7055a9bde18615a76542daeb0443354e5f57b&commit-time=2026-10-15%2021%3A30%3A36%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/processor/implementations/tika_processor.py', 'line': 261, 'function': 'TikaProcessor._send_parse_tika'}, 'file': 'core/quivr_core/processor/implementations/tika_processor.py', 'line': 261, 'function': '_send_parse_tika', 'agent_name': 'TikaProcessor', 'agent_name_source': 'inferred_from_class', 'call_target': 'logger.debug'})
+                except Exception as _gr_exc:
+                    if type(_gr_exc).__name__ == "GRBlockedError": raise
+                    _lineaje_payload_261 = _lineaje_payload_261
+                    __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
                 logger.debug(f"tika url error :{e}. retrying for the {retry} time...")
         raise RuntimeError("can't send parse request to tika server")
 
@@ -278,6 +286,14 @@ class TikaProcessor(ProcessorBase):
         except Exception as _gr_exc:
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload = _lineaje_payload
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
+        _lineaje_payload_282 = [document]
+        try:
+            import asyncio as _gr_asyncio
+            _lineaje_payload_282 = await _gr_asyncio.to_thread(gr_check, _lineaje_payload_282, "rag_source", "rag_pipeline", candidate_policies=['AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:86b43590e40d1aa002962177e56ca5e8c6f6388afb616e0bf4e08f445e3df1ff', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=7fc7055a9bde18615a76542daeb0443354e5f57b&commit-time=2026-10-15%2021%3A30%3A36%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/processor/implementations/tika_processor.py', 'line': 282, 'function': 'TikaProcessor.process_file_inner'}, 'file': 'core/quivr_core/processor/implementations/tika_processor.py', 'line': 282, 'function': 'process_file_inner', 'agent_name': 'TikaProcessor', 'agent_name_source': 'inferred_from_class', 'call_target': 'self.text_splitter.split_documents'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_282 = _lineaje_payload_282
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
         docs = self.text_splitter.split_documents([document])
         for doc in docs:

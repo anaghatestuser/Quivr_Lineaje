@@ -1,0 +1,11 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Mask PII on UI",
+      "policy_id": "AI_DAT_SEC_012",
+      "policy_name": "Mask PII on user interfaces",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:0850b8d863ad4c83c1a483276137f13d3a73f16f9387e37e5c68ee52ae0e73fd"
+}

@@ -1,0 +1,23 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Log agent to LLM activity",
+      "policy_id": "AI_AGENT_ACTIVITY_LOG",
+      "policy_name": "AI agent activity logging",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Enforce Approved LLM.",
+      "policy_id": "AI_APP_SEC_006",
+      "policy_name": "Use only LLMs from the organization's approved list.",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Enforce Approved LLM",
+      "policy_id": "AI_APP_SEC_028",
+      "policy_name": "Do not use LLMs from the organization's disallowed list",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:36aa6da871f70b75470e80141a5b5fba0a765501163cdce8d65dd176ef8090ad"
+}

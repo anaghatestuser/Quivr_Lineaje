@@ -431,6 +431,12 @@ class QuivrQARAG:
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             response = response
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->user_interface' — passing data through unchecked")
+        try:
+            response = gr_check(response, "agent", "user_interface", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:cffba678bd281ee68f0148cb9141163ba801254ad2f18c70eb54d9177c2816e1', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=17a4ff898f75f8a43ab2edeebd7af3294eabc58f&commit-time=2026-10-16%2004%3A42%3A31%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 434, 'function': 'QuivrQARAG.answer'}, 'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 434, 'function': 'answer', 'agent_name': 'QuivrQARAG', 'agent_name_source': 'inferred_from_class', 'site_kind': 'return'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            response = response
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->user_interface' — passing data through unchecked")
         return response
 
     async def answer_astream(
@@ -533,6 +539,11 @@ class QuivrQARAG:
                     chunk_id += 1
         try:
             import asyncio as _gr_asyncio
+            await _gr_asyncio.to_thread(gr_check, {"activity": "llm_to_agent"}, "llm", "agent", observe_only=True, candidate_policies=['AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:0a3b9f454f8e979ff6501f39cc4d542a2562358aecd6c952e8d9e4c01d4f5cdd', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=17a4ff898f75f8a43ab2edeebd7af3294eabc58f&commit-time=2026-10-16%2004%3A42%3A31%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 482, 'function': 'QuivrQARAG.answer_astream'}, 'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 482, 'function': 'answer_astream', 'agent_name': 'QuivrQARAG', 'agent_name_source': 'inferred_from_class', 'call_target': 'conversational_qa_chain.astream'}, interaction_id=locals().get('_lineaje_interaction_id'))
+        except Exception:
+            pass
+        try:
+            import asyncio as _gr_asyncio
             await _gr_asyncio.to_thread(gr_check, {"activity": "llm_to_agent"}, "llm", "agent", observe_only=True, candidate_policies=['AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:1caeb703ea141b93a0c78361d914c91fbbbe62cc408cc18ca247cf6f0795a859', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=fbecb3dd8756db019fc5d1b906964893812b2721&commit-time=2026-10-16%2002%3A57%3A22%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 476, 'function': 'QuivrQARAG.answer_astream'}, 'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 476, 'function': 'answer_astream', 'agent_name': 'QuivrQARAG', 'agent_name_source': 'inferred_from_class', 'call_target': 'conversational_qa_chain.astream'}, interaction_id=locals().get('_lineaje_interaction_id'))
         except Exception:
             pass
@@ -589,6 +600,14 @@ class QuivrQARAG:
         except Exception as _gr_exc:
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload_574 = _lineaje_payload_574
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+        _lineaje_payload_593 = f"answer_astream last_chunk={last_chunk} question={question} rolling_msg={rolling_message} chunk_id={chunk_id}"
+        try:
+            import asyncio as _gr_asyncio
+            _lineaje_payload_593 = await _gr_asyncio.to_thread(gr_check, _lineaje_payload_593, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:fbf54e56f91674c5ae0899addda15c74f63a8eb8e7c76eb4baa0407385ae06ab', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=17a4ff898f75f8a43ab2edeebd7af3294eabc58f&commit-time=2026-10-16%2004%3A42%3A31%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 593, 'function': 'QuivrQARAG.answer_astream'}, 'file': 'core/quivr_core/rag/quivr_rag.py', 'line': 593, 'function': 'answer_astream', 'agent_name': 'QuivrQARAG', 'agent_name_source': 'inferred_from_class', 'call_target': 'logger.debug'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_593 = _lineaje_payload_593
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
         logger.debug(
             f"answer_astream last_chunk={last_chunk} question={question} rolling_msg={rolling_message} chunk_id={chunk_id}"

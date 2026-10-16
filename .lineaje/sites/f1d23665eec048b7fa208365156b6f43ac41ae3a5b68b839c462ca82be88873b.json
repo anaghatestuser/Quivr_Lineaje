@@ -1,0 +1,11 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Emit immutable, forensic-ready audit records for all AI decisions.",
+      "policy_id": "AI_DAT_SEC_029",
+      "policy_name": "Enforce decision logging, audit trail, and forensic readiness for AI-driven actions.",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:f1d23665eec048b7fa208365156b6f43ac41ae3a5b68b839c462ca82be88873b"
+}

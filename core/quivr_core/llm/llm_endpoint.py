@@ -1,3 +1,40 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency (missing / broken: a pass-through client)."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    try:
+        h = _P(__file__).resolve().parent
+        _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+        _spec = _ilu.spec_from_file_location(n, _cand)
+        _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(_m); return _m
+    except Exception:
+        _s.modules.pop(n, None)
+        return type('_lineaje_gr_unavailable', (), {'STUB_API': 999999, 'GuardrailUnavailableError': type('GuardrailUnavailableError', (PermissionError,), {}), 'SiteDescriptor': staticmethod(lambda *a, **k: None), 'new_interaction_id': staticmethod(lambda *a, **k: None), 'enforce': staticmethod(lambda _s, _p, *a, **k: _p), 'enforce_request': staticmethod(lambda _s, _p, *a, **k: _p), 'enforce_reply': staticmethod(lambda _s, _p, *a, **k: _p)})
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import logging
 import os
 import time
@@ -53,8 +90,18 @@ class LLMTokenizer:
 
                     self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_hub)
             except OSError:  # if we don't manage to connect to huggingface and/or no cached models are present
+                _lineaje_payload = f"Cannot acces the configured tokenizer from {self.tokenizer_hub}, using the default tokenizer {self.fallback_tokenizer}"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:5c6a6c5e82edb580ed4cab54a9cb7ba4af17657e237d98a84ab76e14ad6a4a90'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:5c6a6c5e82edb580ed4cab54a9cb7ba4af17657e237d98a84ab76e14ad6a4a90', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, fail_mode='BLOCK', source_type='agent', destination_type='log', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'anaghatestuser', 'version': 'main', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 56, 'function': 'LLMTokenizer.__init__'}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 56, 'function': '__init__', 'agent_name': 'LLMTokenizer', 'agent_name_source': 'inferred_from_class', 'not_on_graph': True})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
                 logger.warning(
-                    f"Cannot acces the configured tokenizer from {self.tokenizer_hub}, using the default tokenizer {self.fallback_tokenizer}"
+                    _lineaje_payload
                 )
                 self.tokenizer = tiktoken.get_encoding(self.fallback_tokenizer)
         else:
@@ -81,7 +128,17 @@ class LLMTokenizer:
                 try:
                     total_size += os.path.getsize(file_path)
                 except (OSError, FileNotFoundError):
-                    logger.debug(f"Could not access tokenizer file: {file_path}")
+                    _lineaje_payload = f"Could not access tokenizer file: {file_path}"
+                    # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:596034588626a1bf5d0a2b7e1aa5cd77c7da97a36fd0c15ce3a4c2a65621b2b8'
+                    _gr_client = _lineaje_load_gr_client()
+                    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:596034588626a1bf5d0a2b7e1aa5cd77c7da97a36fd0c15ce3a4c2a65621b2b8', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, fail_mode='BLOCK', source_type='agent', destination_type='log', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'anaghatestuser', 'version': 'main', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 84, 'function': 'LLMTokenizer._calculate_tokenizer_size'}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 84, 'function': '_calculate_tokenizer_size', 'agent_name': 'LLMTokenizer', 'agent_name_source': 'inferred_from_class', 'not_on_graph': True})
+                    try:
+                        _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                    except _gr_client.GuardrailUnavailableError:
+                        pass
+                    except PermissionError:
+                        pass
+                    logger.debug(_lineaje_payload)
 
         return total_size if total_size > 0 else self._default_size
 
@@ -177,13 +234,33 @@ class LLMTokenizer:
         for hub in unique_tokenizer_hubs:
             try:
                 cls.load(hub, LLMEndpointConfig._FALLBACK_TOKENIZER)
-                logger.info(
-                    f"Successfully preloaded tokenizer: {hub}. "
+                _lineaje_payload = (f"Successfully preloaded tokenizer: {hub}. "
                     f"Total cache size: {cls._current_cache_size / (1024 * 1024):.2f} MB. "
-                    f"Cache count: {len(cls._cache)}"
+                    f"Cache count: {len(cls._cache)}")
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:2800f44e8702e107f333e4dad839f6da19f2f6057729eae69d9f44f9df695d36'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:2800f44e8702e107f333e4dad839f6da19f2f6057729eae69d9f44f9df695d36', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, fail_mode='BLOCK', source_type='agent', destination_type='log', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'anaghatestuser', 'version': 'main', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 180, 'function': 'LLMTokenizer.preload_tokenizers'}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 180, 'function': 'preload_tokenizers', 'agent_name': 'LLMTokenizer', 'agent_name_source': 'inferred_from_class', 'not_on_graph': True})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
+                logger.info(
+                    _lineaje_payload
                 )
             except Exception as e:
-                logger.warning(f"Failed to preload tokenizer {hub}: {str(e)}")
+                _lineaje_payload = f"Failed to preload tokenizer {hub}: {str(e)}"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a3126c7630767aa25bb1a591e6417fc30e963e3b7d1ac3d75f099679f9f55f41'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a3126c7630767aa25bb1a591e6417fc30e963e3b7d1ac3d75f099679f9f55f41', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, fail_mode='BLOCK', source_type='agent', destination_type='log', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'anaghatestuser', 'version': 'main', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 186, 'function': 'LLMTokenizer.preload_tokenizers'}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 186, 'function': 'preload_tokenizers', 'agent_name': 'LLMTokenizer', 'agent_name_source': 'inferred_from_class', 'not_on_graph': True})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
+                logger.warning(_lineaje_payload)
 
 
 class LLMEndpoint:
@@ -229,6 +306,16 @@ class LLMEndpoint:
                 deployment = parsed_url.path.split("/")[3]  # type: ignore
                 api_version = parse_qs(parsed_url.query).get("api-version", [None])[0]  # type: ignore
                 azure_endpoint = f"https://{parsed_url.netloc}"  # type: ignore
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:d27b38d0a00c2b0151c6bc6acb0cdb3baa3d73432c4aa9da4cfc6a826739bb4c'
+                _lineaje_model_evidence = {'model': deployment, 'client': 'AzureChatOpenAI', 'provider': 'langchain_openai', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:d27b38d0a00c2b0151c6bc6acb0cdb3baa3d73432c4aa9da4cfc6a826739bb4c', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'gpt-4o', 'provider': 'openai', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'GPT', 'purl': 'pkg:aimodel/GPT@4o', 'version': '4o'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 232}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 232, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:fb3beb8d6edd7eb9'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = AzureChatOpenAI(
                     azure_deployment=deployment,  # type: ignore
                     api_version=api_version,
@@ -241,6 +328,16 @@ class LLMEndpoint:
                 )
             elif config.supplier == DefaultModelSuppliers.ANTHROPIC:
                 assert config.llm_api_key, "Can't load model config"
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:36aa6da871f70b75470e80141a5b5fba0a765501163cdce8d65dd176ef8090ad'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatAnthropic', 'provider': 'langchain_anthropic', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:36aa6da871f70b75470e80141a5b5fba0a765501163cdce8d65dd176ef8090ad', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'claude-3-5-sonnet', 'provider': 'anthropic', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'Claude', 'purl': 'pkg:aimodel/Claude@3-5-sonnet', 'version': '3-5-sonnet'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 244}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 244, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:cc90ee6243efaa19'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatAnthropic(
                     model_name=config.model,
                     api_key=SecretStr(config.llm_api_key),
@@ -251,6 +348,16 @@ class LLMEndpoint:
                     stop=None,
                 )
             elif config.supplier == DefaultModelSuppliers.OPENAI:
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:2be5eda52e70ca204b20759f6264901960440947e8a3c12aae0f318747db0c74'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatOpenAI', 'provider': 'langchain_openai', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:2be5eda52e70ca204b20759f6264901960440947e8a3c12aae0f318747db0c74', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'gpt-4o', 'provider': 'openai', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'GPT', 'purl': 'pkg:aimodel/GPT@4o', 'version': '4o'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 254}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 254, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:0b3d736e18d63946'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatOpenAI(
                     model=config.model,
                     api_key=SecretStr(config.llm_api_key)
@@ -263,6 +370,16 @@ class LLMEndpoint:
                     else None,
                 )
             elif config.supplier == DefaultModelSuppliers.MISTRAL:
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a31b3190e9c1cd424cc2bb5d5e5742a4a95335d9f589832a9cb1774eb195c6af'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatMistralAI', 'provider': 'langchain_mistralai', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a31b3190e9c1cd424cc2bb5d5e5742a4a95335d9f589832a9cb1774eb195c6af', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'ChatMistralAI', 'provider': '', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'ChatMistralAI', 'purl': 'pkg:aimodel/ChatMistralAI@1.0.0', 'version': '1.0.0'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 266}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 266, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:ea1966c3be955c7a'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatMistralAI(
                     model_name=config.model,
                     api_key=SecretStr(config.llm_api_key)
@@ -272,6 +389,16 @@ class LLMEndpoint:
                     temperature=config.temperature,
                 )
             elif config.supplier == DefaultModelSuppliers.GEMINI:
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a79b7ec560c42888afe99379c598c5e198166102d1d71ba7fda4441ca7f6c356'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatGoogleGenerativeAI', 'provider': 'langchain_google_genai', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a79b7ec560c42888afe99379c598c5e198166102d1d71ba7fda4441ca7f6c356', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'ChatGoogleGenerativeAI', 'provider': '', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'ChatGoogleGenerativeAI', 'purl': 'pkg:aimodel/ChatGoogleGenerativeAI@1.0.0', 'version': '1.0.0'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 275}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 275, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:cdcf0d35a5fdc0df'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatGoogleGenerativeAI(
                     model=config.model,
                     api_key=SecretStr(config.llm_api_key)
@@ -282,6 +409,16 @@ class LLMEndpoint:
                     temperature=config.temperature,
                 )
             elif config.supplier == DefaultModelSuppliers.GROQ:
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a666f00adb954e0ec3339ede3a6ef0e832e446eebdf2aaba361925dbb5f3cdfb'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatGroq', 'provider': 'langchain_groq', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a666f00adb954e0ec3339ede3a6ef0e832e446eebdf2aaba361925dbb5f3cdfb', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'ChatGroq', 'provider': '', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'ChatGroq', 'purl': 'pkg:aimodel/ChatGroq@1.0.0', 'version': '1.0.0'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 285}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 285, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:31ae2a61bd3bf04c'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatGroq(
                     model=config.model,
                     api_key=SecretStr(config.llm_api_key)
@@ -293,6 +430,16 @@ class LLMEndpoint:
                 )
 
             else:
+                # LINEAJE: approved-model gate `_lineaje_model_evidence` at agent->llm pre_model — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:614af9bd41e02d822793fed23e7f2194575cbb1f6957e2ab5cb9608f3fc49e90'
+                _lineaje_model_evidence = {'model': config.model, 'client': 'ChatOpenAI', 'provider': 'langchain_openai', 'model_source': 'call_kwarg', 'project': 'tree'}
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:614af9bd41e02d822793fed23e7f2194575cbb1f6957e2ab5cb9608f3fc49e90', phase='pre_model', boundary={'source': 'agent_config', 'sink': 'model'}, fail_mode='BLOCK', source_type='agent', destination_type='llm', project='tree', organization='', project_name='anaghatestuser', project_version='main', project_branch='main', components={'destination': {'entity_type': 'llm', 'name': 'gpt-4o', 'provider': 'openai', 'version': ''}, 'identity': {'app': {'name': 'anaghatestuser', 'purl': 'pkg:github/github-second/anaghatestuser@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo', 'version': 'main'}, 'destination': {'entity_type': 'aimodel', 'name': 'GPT', 'purl': 'pkg:aimodel/GPT@4o', 'version': '4o'}}, 'invocation': {'file': 'core/quivr_core/llm/llm_endpoint.py', 'function': 'LLMEndpoint.from_config', 'line': 296}, 'file': 'core/quivr_core/llm/llm_endpoint.py', 'line': 296, 'function': 'from_config', 'agent_name': 'LLMEndpoint', 'agent_name_source': 'inferred_from_class', 'boundary_id': 'bnd:79c2cebb7e3b39ba'})
+                try:
+                    _lineaje_model_evidence = _gr_client.enforce(_gr_site, _lineaje_model_evidence, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    raise
                 _llm = ChatOpenAI(
                     model=config.model,
                     api_key=SecretStr(config.llm_api_key)

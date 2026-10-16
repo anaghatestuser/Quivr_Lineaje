@@ -1,0 +1,29 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Redact PII",
+      "policy_id": "AI_DAT_SEC_011",
+      "policy_name": "Do not send PII and/or secrets to AI Models",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "If a file contains PII, redact the PII",
+      "policy_id": "AI_DAT_SEC_025",
+      "policy_name": "No file should contain any PII.",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Minimise and redact all outbound AI outputs.",
+      "policy_id": "AI_DAT_SEC_027",
+      "policy_name": "Enforce output data minimization for model, tool, and API responses.",
+      "policy_version": "2026.08.1"
+    },
+    {
+      "guardrail_id": "Emit immutable, forensic-ready audit records for all AI decisions.",
+      "policy_id": "AI_DAT_SEC_029",
+      "policy_name": "Enforce decision logging, audit trail, and forensic readiness for AI-driven actions.",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:77aa9f22d8d6ea198f6551efdf285f8d0babdf91522e8f08920583d02131445c"
+}

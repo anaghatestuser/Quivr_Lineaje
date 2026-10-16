@@ -277,6 +277,13 @@ def _build_processor(
                 if type(_gr_exc).__name__ == "GRBlockedError": raise
                 documents = documents
                 __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
+            try:
+                import asyncio as _gr_asyncio
+                documents = await _gr_asyncio.to_thread(gr_check, documents, "rag_source", "rag_pipeline", candidate_policies=['AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:ab3e38a4ae7a8eb1b8be5e2b27348582ed910c4fce110e2d07327194bcad5e74', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=7fc7055a9bde18615a76542daeb0443354e5f57b&commit-time=2026-10-15%2021%3A30%3A36%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/processor/implementations/default.py', 'line': 280, 'function': '_build_processor._Processor.process_file_inner'}, 'file': 'core/quivr_core/processor/implementations/default.py', 'line': 280, 'function': 'process_file_inner', 'agent_name': '_Processor', 'agent_name_source': 'inferred_from_class', 'call_target': 'self.text_splitter.split_documents'})
+            except Exception as _gr_exc:
+                if type(_gr_exc).__name__ == "GRBlockedError": raise
+                documents = documents
+                __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
             docs = self.text_splitter.split_documents(documents)
 
             for doc in docs:

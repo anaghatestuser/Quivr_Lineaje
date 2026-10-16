@@ -1,3 +1,40 @@
+# Copyright (c) Lineaje, Inc. All rights reserved.
+# Lineaje UnifAI guardrail  version=2.0.0-alpha
+def _lineaje_load_gr_client():
+    """Lineaje-added: load gr_stub_client.py without a pip dependency (missing / broken: a pass-through client)."""
+    import sys as _s, importlib.util as _ilu
+    from pathlib import Path as _P
+    n = "_lineaje_gr_stub_client"
+    if n in _s.modules: return _s.modules[n]
+    try:
+        h = _P(__file__).resolve().parent
+        _cand = next((d / "gr_stub_client.py" for d in [h, *h.parents][:8] if (d / "gr_stub_client.py").is_file()), h / "gr_stub_client.py")
+        _spec = _ilu.spec_from_file_location(n, _cand)
+        _s.modules[n] = _m = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(_m); return _m
+    except Exception:
+        _s.modules.pop(n, None)
+        return type('_lineaje_gr_unavailable', (), {'STUB_API': 999999, 'GuardrailUnavailableError': type('GuardrailUnavailableError', (PermissionError,), {}), 'SiteDescriptor': staticmethod(lambda *a, **k: None), 'new_interaction_id': staticmethod(lambda *a, **k: None), 'enforce': staticmethod(lambda _s, _p, *a, **k: _p), 'enforce_request': staticmethod(lambda _s, _p, *a, **k: _p), 'enforce_reply': staticmethod(lambda _s, _p, *a, **k: _p)})
+def _lineaje_current_model():
+    """Lineaje-added: reread the app's model setting for every request."""
+    import os as _o
+    from pathlib import Path as _P
+    _keys = ("OPENROUTER_MODEL", "LLM_MODEL", "MODEL_NAME", "MODEL_ID", "OPENAI_MODEL", "ANTHROPIC_MODEL", "BEDROCK_MODEL_ID")
+    _here = _P(__file__).resolve().parent
+    for _path in (_here / ".env", *(_p / ".env" for _p in list(_here.parents)[:8])):
+        if not _path.is_file(): continue
+        try: _lines = _path.read_text(encoding="utf-8").splitlines()
+        except OSError: continue
+        _values = {}
+        for _line in _lines:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line: continue
+            _key, _, _value = _line.partition("=")
+            if _key.strip() in _keys: _values[_key.strip()] = _value.strip().strip(chr(34)).strip(chr(39))
+        for _key in _keys:
+            if _values.get(_key): return _values[_key]
+    return next((_o.environ[_key].strip() for _key in _keys if _o.environ.get(_key, "").strip()), "")
+
 import logging
 from typing import Any, Dict, List, Tuple, no_type_check
 
@@ -39,6 +76,15 @@ def format_history_to_openai_mesages(
         messages.append(HumanMessage(content=human))
         messages.append(AIMessage(content=ai))
     messages.append(HumanMessage(content=question))
+    # LINEAJE: enforce() `messages` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:a90b49e2ec5cb5db2b57e9cb466fd5973a8b647e500475f357393f89043aee17'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:a90b49e2ec5cb5db2b57e9cb466fd5973a8b647e500475f357393f89043aee17', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, fail_mode='BLOCK', source_type='agent', destination_type='user_interface', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/utils.py', 'line': 42, 'function': 'format_history_to_openai_mesages'}, 'file': 'core/quivr_core/rag/utils.py', 'line': 42, 'function': 'format_history_to_openai_mesages', 'agent_name': 'format_history_to_openai_mesages', 'agent_name_source': 'inferred_from_function', 'not_on_graph': True})
+    try:
+        messages = _gr_client.enforce(_gr_site, messages, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return messages
 
 
@@ -122,7 +168,26 @@ def get_answers_from_tool_calls(tool_calls):
             if isinstance(args, dict):
                 answers.append(args.get("answer", ""))
             else:
-                logger.warning(f"Expected dict for tool_call args, got {type(args)}")
+                _lineaje_payload = f"Expected dict for tool_call args, got {type(args)}"
+                # LINEAJE: enforce() `_lineaje_payload` at agent->log log_emit — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:3fa4ef616f866b4c1f53bd12dca7eb25ff21a4f79d484bdd15fb8429e32d7525'
+                _gr_client = _lineaje_load_gr_client()
+                _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:3fa4ef616f866b4c1f53bd12dca7eb25ff21a4f79d484bdd15fb8429e32d7525', phase='log_emit', boundary={'source': 'log', 'sink': 'log'}, fail_mode='BLOCK', source_type='agent', destination_type='log', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/utils.py', 'line': 125, 'function': 'get_answers_from_tool_calls'}, 'file': 'core/quivr_core/rag/utils.py', 'line': 125, 'function': 'get_answers_from_tool_calls', 'agent_name': 'get_answers_from_tool_calls', 'agent_name_source': 'inferred_from_function', 'not_on_graph': True})
+                try:
+                    _lineaje_payload = _gr_client.enforce(_gr_site, _lineaje_payload, content_type='application/json')
+                except _gr_client.GuardrailUnavailableError:
+                    pass
+                except PermissionError:
+                    pass
+                logger.warning(_lineaje_payload)
+    # LINEAJE: enforce() `answers` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:aff460a2d8667066117a7a76ec8502ae90f5a640a9f685a6976abefdccf792ed'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:aff460a2d8667066117a7a76ec8502ae90f5a640a9f685a6976abefdccf792ed', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, fail_mode='BLOCK', source_type='agent', destination_type='user_interface', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/utils.py', 'line': 126, 'function': 'get_answers_from_tool_calls'}, 'file': 'core/quivr_core/rag/utils.py', 'line': 126, 'function': 'get_answers_from_tool_calls', 'agent_name': 'get_answers_from_tool_calls', 'agent_name_source': 'inferred_from_function', 'not_on_graph': True})
+    try:
+        answers = _gr_client.enforce(_gr_site, answers, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return answers
 
 
@@ -158,6 +223,15 @@ def parse_response(raw_response: RawRAGResponse, model_name: str) -> ParsedRAGRe
 
     answer_str = "\n".join(answers)
     parsed_response = ParsedRAGResponse(answer=answer_str, metadata=metadata)
+    # LINEAJE: enforce() `parsed_response` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:5ae048f178a7463e79d4cdc60c174839539697bf8eff6520bb4e6896d3fea942'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:5ae048f178a7463e79d4cdc60c174839539697bf8eff6520bb4e6896d3fea942', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, fail_mode='BLOCK', source_type='agent', destination_type='user_interface', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/utils.py', 'line': 161, 'function': 'parse_response'}, 'file': 'core/quivr_core/rag/utils.py', 'line': 161, 'function': 'parse_response', 'agent_name': 'parse_response', 'agent_name_source': 'inferred_from_function', 'not_on_graph': True})
+    try:
+        parsed_response = _gr_client.enforce(_gr_site, parsed_response, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return parsed_response
 
 
@@ -181,6 +255,15 @@ def format_file_list(
     files = files[:max_files]
 
     files_str = "\n".join(files) if list_files_array else "None"
+    # LINEAJE: enforce() `files_str` at agent->user_interface data_egress — this payload crossed a trust boundary with no runtime policy check. Mask/block; do not remove without review. site_id='site:sha256:60030f18bda71e8dd070c8c644c0d9afa587d14d6d3c3ca6b07bffff3a24d1f4'
+    _gr_client = _lineaje_load_gr_client()
+    _gr_site = _gr_client.SiteDescriptor(site_id='site:sha256:60030f18bda71e8dd070c8c644c0d9afa587d14d6d3c3ca6b07bffff3a24d1f4', phase='data_egress', boundary={'source': 'agent_message', 'sink': 'user_interface'}, fail_mode='BLOCK', source_type='agent', destination_type='user_interface', project='tree', organization='', project_name='quivr_lineaje', project_version='main', project_branch='main', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=cb72bb5e125b56bc68c0a6ef2b473794a944ef53&commit-time=2026-09-27%2000%3A34%3A20%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/rag/utils.py', 'line': 184, 'function': 'format_file_list'}, 'file': 'core/quivr_core/rag/utils.py', 'line': 184, 'function': 'format_file_list', 'agent_name': 'format_file_list', 'agent_name_source': 'inferred_from_function', 'not_on_graph': True})
+    try:
+        files_str = _gr_client.enforce(_gr_site, files_str, content_type='text/plain')
+    except _gr_client.GuardrailUnavailableError:
+        pass
+    except PermissionError:
+        pass
     return files_str
 
 

@@ -1,0 +1,11 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "Sanitize Prompt Injection",
+      "policy_id": "AI_APP_SEC_070",
+      "policy_name": "Detect and block all forms of prompt injection attacks in user inputs and file contents",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:2ee5f0eea1010041ec0225031139dc2b951acfd734a4e6a1f42756155e3d76d8"
+}

@@ -1,0 +1,11 @@
+{
+  "candidate_policies": [
+    {
+      "guardrail_id": "If a file contains PII, redact the PII",
+      "policy_id": "AI_DAT_SEC_025",
+      "policy_name": "No file should contain any PII.",
+      "policy_version": "2026.08.1"
+    }
+  ],
+  "site_id": "site:sha256:654fd716f929a3e72312ec9006e8d88d2309e129e253160f0799e738d2300de9"
+}

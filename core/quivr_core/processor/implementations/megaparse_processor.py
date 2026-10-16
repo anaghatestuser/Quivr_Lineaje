@@ -266,6 +266,14 @@ class MegaparseProcessor(ProcessorBase[MPDocument]):
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload = _lineaje_payload
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
+        _lineaje_payload_269 = f"Uploading file {file.path} to MegaParse"
+        try:
+            import asyncio as _gr_asyncio
+            _lineaje_payload_269 = await _gr_asyncio.to_thread(gr_check, _lineaje_payload_269, "agent", "log", candidate_policies=['AI_APP_SEC_001', 'AI_APP_SEC_002', 'AI_APP_SEC_006', 'AI_APP_SEC_014', 'AI_APP_SEC_022', 'AI_APP_SEC_023', 'AI_APP_SEC_028', 'AI_APP_SEC_029', 'AI_APP_SEC_032', 'AI_APP_SEC_033', 'AI_APP_SEC_034', 'AI_APP_SEC_035', 'AI_APP_SEC_038', 'AI_APP_SEC_039', 'AI_APP_SEC_040', 'AI_APP_SEC_059', 'AI_APP_SEC_064', 'AI_APP_SEC_066', 'AI_APP_SEC_067', 'AI_APP_SEC_068', 'AI_APP_SEC_069', 'AI_APP_SEC_071', 'AI_APP_SEC_075', 'AI_APP_SEC_078', 'AI_DAT_SEC_001', 'AI_DAT_SEC_009', 'AI_DAT_SEC_010', 'AI_DAT_SEC_011', 'AI_DAT_SEC_012', 'AI_DAT_SEC_023', 'AI_DAT_SEC_024', 'AI_DAT_SEC_025', 'AI_DAT_SEC_027', 'AI_DAT_SEC_029', 'AI_DAT_SEC_030', 'AI_IAC_002', 'AI_IAC_006', 'AI_IAC_007', 'AI_IAC_008', 'AI_IAC_009', 'AI_IAC_014', 'AI_IAC_015', 'AI_IAC_016', 'AI_IAC_017', 'AI_IAC_018', 'AI_IAC_020', 'AI_IAC_022', 'AI_IAC_023', 'AI_IAC_024', 'AI_IAC_025', 'AI_IAC_026', 'AI_IAC_031', 'AI_VULN_SEC_005', 'AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:ae6e759ef05052feabf76c74615f9832e7a6a6b6164776bedceb143bfc82f503', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=7fc7055a9bde18615a76542daeb0443354e5f57b&commit-time=2026-10-15%2021%3A30%3A36%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/processor/implementations/megaparse_processor.py', 'line': 269, 'function': 'MegaparseProcessor.process_file_inner'}, 'file': 'core/quivr_core/processor/implementations/megaparse_processor.py', 'line': 269, 'function': 'process_file_inner', 'agent_name': 'MegaparseProcessor', 'agent_name_source': 'inferred_from_class', 'call_target': 'logger.info'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_269 = _lineaje_payload_269
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'agent->log' — passing data through unchecked")
         logger.info(f"Uploading file {file.path} to MegaParse")
         async with MegaParseNATSClient(ClientNATSConfig()) as client:
             response = await client.parse_file(file=file.path)
@@ -281,6 +289,14 @@ class MegaparseProcessor(ProcessorBase[MPDocument]):
         except Exception as _gr_exc:
             if type(_gr_exc).__name__ == "GRBlockedError": raise
             _lineaje_payload = _lineaje_payload
+            __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
+        _lineaje_payload_285 = [document]
+        try:
+            import asyncio as _gr_asyncio
+            _lineaje_payload_285 = await _gr_asyncio.to_thread(gr_check, _lineaje_payload_285, "rag_source", "rag_pipeline", candidate_policies=['AI_AGENT_ACTIVITY_LOG'], site_id='site:sha256:fa7b5e04ed9be2b9ac0048f0ed611856cb2015a44225bf933d113d4fe04561c8', components={'identity': {'app': {'name': 'quivr_lineaje', 'version': 'main', 'purl': 'pkg:github/anaghatestuser/quivr_lineaje@main?commit-id=7fc7055a9bde18615a76542daeb0443354e5f57b&commit-time=2026-10-15%2021%3A30%3A36%20%2B0000&build_file=core/pyproject.toml&repo_strategy=single-repo'}}, 'invocation': {'file': 'core/quivr_core/processor/implementations/megaparse_processor.py', 'line': 285, 'function': 'MegaparseProcessor.process_file_inner'}, 'file': 'core/quivr_core/processor/implementations/megaparse_processor.py', 'line': 285, 'function': 'process_file_inner', 'agent_name': 'MegaparseProcessor', 'agent_name_source': 'inferred_from_class', 'call_target': 'self.text_splitter.split_documents'})
+        except Exception as _gr_exc:
+            if type(_gr_exc).__name__ == "GRBlockedError": raise
+            _lineaje_payload_285 = _lineaje_payload_285
             __import__("logging").getLogger("lineaje.gr_client").warning("Lineaje guardrail unavailable at 'rag_source->rag_pipeline' — passing data through unchecked")
         chunks = self.text_splitter.split_documents([document])
         for chunk in chunks:

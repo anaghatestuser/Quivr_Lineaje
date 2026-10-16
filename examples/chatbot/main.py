@@ -4,6 +4,8 @@ def _lineaje_load_gr_client():
     """Lineaje-added: load gr_stub_client.py without a pip dependency (missing / broken: a pass-through client)."""
     import sys as _s, importlib.util as _ilu
     from pathlib import Path as _P
+    # LINEAJE BUILD-TIME VIOLATION AI_DAT_SEC_001: a secret is hardcoded here. Remove it from source, load it from a secret manager or environment variable, and rotate the exposed credential.
+    DB_PASSWORD = "Demo-Hardcoded-Passw0rd-12345"
     n = "_lineaje_gr_stub_client"
     if n in _s.modules: return _s.modules[n]
     try:

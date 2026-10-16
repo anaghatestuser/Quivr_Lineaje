@@ -136,6 +136,7 @@ def _reset_runtime_caches() -> None:
     _SITE_REGISTER_ATTEMPTED.clear()
     _SITE_REGISTERED.clear()
     _SITE_POLICY_MAPPINGS.clear()
+    _SITE_POLICIES.clear()
     _PROCESS_BLOCK_LATCH.set(None)
     _reset_observability()
 
@@ -1438,6 +1439,52 @@ class SiteDescriptor:
         # Bind the per-request latch on the constructing thread (the FastAPI
         # handler) before asyncio.to_thread copies the context into a worker.
         _ensure_request_latch()
+        # The stub names only its site_id: its candidate_policies come from the
+        # site's companion file (a log-only site's is the activity log).
+        if not self.candidate_policies:
+            self.candidate_policies = (["AI_AGENT_ACTIVITY_LOG"] if self.observe_only
+                                       else _site_candidate_policies(self.site_id))
+
+
+# The scan writes each site's candidate_policies to <this file's dir>/.lineaje/sites/<site key>.json
+# (pipeline/stub/guardrail_stub_insertion.py site_policies_file); LINEAJE_SITES_DIR overrides the directory.
+_SITE_POLICIES: "dict[str, list]" = {}
+_SITE_POLICIES_LOCK = threading.Lock()
+
+
+def _site_policies_key(site_id: str) -> str:
+    m = re.fullmatch(r"site:sha256:([0-9a-f]{16,128})", (site_id or "").strip())
+    if m:
+        return m.group(1)
+    import hashlib as _hashlib
+    return _hashlib.sha256((site_id or "").encode("utf-8")).hexdigest()
+
+
+def _site_candidate_policies(site_id: str) -> list:
+    """``site_id``'s candidate_policies from its companion file, read once per process; ``[]``
+    when there is no file (the Guardrail then registers the site from its own catalog)."""
+    if not site_id:
+        return []
+    with _SITE_POLICIES_LOCK:
+        if site_id in _SITE_POLICIES:
+            return list(_SITE_POLICIES[site_id])
+    base = (os.environ.get("LINEAJE_SITES_DIR") or "").strip() \
+        or os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lineaje", "sites")
+    path = os.path.join(base, _site_policies_key(site_id) + ".json")
+    policies: list = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = json.load(fh)
+        found = doc.get("candidate_policies") if isinstance(doc, dict) else None
+        if isinstance(found, list) and (not doc.get("site_id") or doc.get("site_id") == site_id):
+            policies = found
+    except FileNotFoundError:
+        _logger.warning("gr_stub_client: no candidate_policies file for site_id=%s (%s)", site_id, path)
+    except Exception as exc:
+        _logger.warning("gr_stub_client: unreadable candidate_policies file %s (%s)", path, exc)
+    with _SITE_POLICIES_LOCK:
+        _SITE_POLICIES[site_id] = policies
+    return list(policies)
 
 
 _PHASE_BOUNDARY_TO_SOURCE_DEST: dict[tuple[str, str, str], tuple[str, str]] = {
@@ -3613,11 +3660,13 @@ def _ensure_site_registered(
                 "boundary": getattr(site, "boundary", None) or {},
                 "components": getattr(site, "components", None) or {},
                 # Record the stub's own list as the site's mapping so the
-                # /enforce exact-match holds.
-                "candidate_policies": [
+                # /enforce exact-match holds. No list (its site file is
+                # missing): left out, so the Guardrail compiles the site from
+                # its catalog instead of recording an empty mapping.
+                **({"candidate_policies": [
                     (c.get("policy_id") if isinstance(c, dict) else getattr(c, "policy_id", c))
-                    for c in (getattr(site, "candidate_policies", None) or [])
-                ],
+                    for c in site.candidate_policies
+                ]} if getattr(site, "candidate_policies", None) else {}),
             },
             pat,
             timeout,
